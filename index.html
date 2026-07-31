@@ -4,6 +4,9 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>追秋 · 大兴安岭十日之旅</title>
+<meta name="description" content="台州出发，穿越呼伦贝尔大草原与大兴安岭的十日自驾行程地图">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <style>
@@ -38,8 +41,15 @@ body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei
 .tl-dot{position:absolute;left:-19px;top:16px;width:10px;height:10px;border-radius:50%;z-index:1;background:#fff;border:2px solid var(--blu)}
 .pay-summary{background:var(--card);border-radius:12px;padding:14px;margin-bottom:10px;font-size:13px;line-height:1.7}
 .dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:6px;vertical-align:middle}
+.links{display:flex;gap:6px;margin-top:8px;flex-wrap:wrap}
+.btn{display:inline-flex;align-items:center;gap:3px;padding:6px 12px;border-radius:8px;font-size:12px;font-weight:600;border:none;cursor:pointer;text-decoration:none!important}
+.btn.nav{background:var(--accent);color:#fff}
+.btn.xhs{background:#ff2442;color:#fff}
+.btn:active{filter:brightness(.9)}
+.badge{display:inline-flex;font-size:11px;font-weight:700;padding:1px 7px;border-radius:4px;background:rgba(0,122,255,.1);color:var(--blu)}
 .leaflet-popup-content-wrapper{border-radius:10px!important;box-shadow:0 4px 14px rgba(0,0,0,.12)!important}
-.leaflet-popup-content{font-size:13px!important;margin:10px 12px!important}
+.leaflet-popup-content{font-size:13px!important;margin:10px 12px!important;line-height:1.5}
+.leaflet-popup-content a{color:var(--accent)!important}
 .leaflet-control-zoom a{width:32px!important;height:32px!important;line-height:30px!important;border-radius:8px!important;background:rgba(255,255,255,.88)!important;border:.5px solid var(--sep)!important;font-size:14px!important}
 </style>
 </head>
@@ -57,8 +67,8 @@ const DAYS=[
 {id:2,label:'DAY2',date:'9.27 周日',title:'海拉尔→根河',color:'#34c759',locations:[
   {name:'海拉尔',lat:49.205,lng:119.825,type:'hotel',time:'出发',desc:'酒店早餐后出发'},
   {name:'莫尔格勒河',lat:50.0592,lng:121.0075,type:'spot',time:'10:00',desc:'天下第一曲水 5A景区 观光车40元/人',budget:'¥80'},
-  {name:'额尔古纳湿地',lat:50.2236,lng:120.1709,type:'spot',time:'14:00',desc:'亚洲第一湿地 门票65+观光车15=80元/人',budget:'¥160'},
-  {name:'额尔古纳国家湿地公园',lat:50.3,lng:120.25,type:'spot',time:'17:00',desc:'门票60+观光车20=80元/人 游玩3.5小时',budget:'¥160'},
+  {name:'额尔古纳湿地景区',lat:50.2236,lng:120.1709,type:'spot',time:'—',desc:'亚洲第一湿地 门票65+观光车15=80元/人 【与额尔古纳国家湿地公园二选一】',budget:'¥160'},
+  {name:'额尔古纳国家湿地公园',lat:50.3,lng:120.25,type:'spot',time:'—',desc:'门票60+观光车20=80元/人 【与额尔古纳湿地景区二选一】',budget:'¥160'},
   {name:'根河',lat:50.7847,lng:121.4771,type:'hotel',time:'20:00',desc:'住宿根河'}
 ]},
 {id:3,label:'DAY3',date:'9.28 周一',title:'根河→满归',color:'#af52de',locations:[
@@ -76,9 +86,8 @@ const DAYS=[
 ]},
 {id:5,label:'DAY5',date:'9.30 周三',title:'莫尔道嘎→室韦',color:'#5ac8fa',locations:[
   {name:'莫尔道嘎',lat:51.2667,lng:120.4167,type:'hotel',time:'出发',desc:'清晨出发'},
-  {name:'白桦林景区',lat:51.15,lng:120.05,type:'spot',time:'10:00',desc:'100km/2h 纯白桦林 金秋最美'},
+  {name:'白桦林景区',lat:51.15,lng:120.05,type:'spot',time:'10:00',desc:'100km/2h 纯白桦林'},
   {name:'老鹰嘴',lat:51.2,lng:119.95,type:'spot',time:'12:00',desc:'天然巨石景观 俯瞰额尔古纳河'},
-  {name:'太平镇-临江村-室韦',lat:51.344,lng:119.8998,type:'spot',time:'15:00',desc:'一路美景 神仙坡观景台'},
   {name:'室韦',lat:51.344,lng:119.8998,type:'hotel',time:'17:00',desc:'中国十大最美乡村'}
 ]},
 {id:6,label:'DAY6',date:'10.1 周四',title:'室韦→黑山头',color:'#ff6b6b',locations:[
@@ -114,6 +123,8 @@ L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',{su
 const emojis={food:'🍽️',spot:'📍',hotel:'🏨',transport:'🚗',drink:'🍺'};
 let markers=[],polylines=[];
 function clearMap(){markers.forEach(m=>map.removeLayer(m));polylines.forEach(p=>map.removeLayer(p));markers=[];polylines=[];}
+function amapNavUrl(lat,lng){return 'https://uri.amap.com/navigation?to='+lng+','+lat+'&mode=car&src=trip-map&coordinate=gcj02';}
+function amapWebUrl(name,lat,lng){return 'https://uri.amap.com/marker?position='+lng+','+lat+'&name='+encodeURIComponent(name)+'&src=trip-map&coordinate=gcj02';}
 function showDay(idx){
   clearMap();
   if(idx===0){
@@ -123,7 +134,7 @@ function showDay(idx){
     DAYS.slice(1).forEach(d=>{
       d.locations.forEach(l=>{
         if(!l.lat)return;
-        const m=L.circleMarker([l.lat,l.lng],{radius:4,fillColor:d.color,color:'#fff',weight:1.5,fillOpacity:.9}).addTo(map).bindPopup('<b>'+l.name+'</b><br>'+d.label);
+        const m=L.circleMarker([l.lat,l.lng],{radius:4,fillColor:d.color,color:'#fff',weight:1.5,fillOpacity:.9}).addTo(map).bindPopup('<b>'+l.name+'</b><br>'+d.label+'<br><a href="'+amapNavUrl(l.lat,l.lng)+'" target="_blank">🧭 导航</a>');
         markers.push(m);
       });
     });
@@ -135,25 +146,32 @@ function showDay(idx){
     if(!l.lat)return;
     const ic=L.divIcon({className:'',html:'<div style="width:28px;height:28px;border-radius:50%;background:'+day.color+';border:2.5px solid #fff;display:flex;align-items:center;justify-content:center;font-size:13px;box-shadow:0 2px 8px rgba(0,0,0,.18)">'+(emojis[l.type]||'📌')+'</div>',iconSize:[28,28],iconAnchor:[14,14]});
     const m=L.marker([l.lat,l.lng],{icon:ic}).addTo(map);
-    m.bindPopup('<b>'+l.name+'</b>'+(l.time?'<br>'+l.time:'')+'<br>'+l.desc+(l.budget?'<br><span style="color:#ff9500">'+l.budget+'</span>':''));
+    m.bindPopup('<b>'+l.name+'</b>'+(l.time?'<br>'+l.time:'')+'<br>'+l.desc+(l.budget?'<br><span style="color:#ff9500">'+l.budget+'</span>':'')+'<br><a href="'+amapNavUrl(l.lat,l.lng)+'" target="_blank">🧭 导航</a>');
     markers.push(m);
-    coords.push([l.lat,l.lng]);
+    if(l.time!=='—')coords.push([l.lat,l.lng]);
   });
   if(coords.length>1){const pl=L.polyline(coords,{color:day.color,weight:2.5,opacity:.5,dashArray:'6,5'}).addTo(map);polylines.push(pl);}
   if(coords.length)map.fitBounds(coords,{padding:[40,40],maxZoom:12});
 }
 function locCard(loc,dayIdx){
   const uid='d'+dayIdx+'-'+loc.name.replace(/\W/g,'');
-  return '<div class="tl-item"><div class="tl-dot"></div><div class="card"><div class="time">'+(loc.time||'')+'</div><div class="name">'+loc.name+'</div><div class="desc">'+loc.desc+'</div>'+(loc.budget?'<div class="budget">预算 '+loc.budget+'</div>':'')+(loc.detail?'<div class="budget" style="cursor:pointer" onclick="toggle(\''+uid+'\')">📋 详情</div><div id="'+uid+'" style="display:none;margin-top:6px;padding-top:6px;border-top:.5px solid var(--sep);font-size:12px;color:var(--sub);line-height:1.6">'+loc.detail.replace(/\n/g,'<br>')+'</div>':'')+'</div></div>';
+  let lnk='<a href="'+amapNavUrl(loc.lat,loc.lng)+'" target="_blank" class="btn nav">🧭 导航</a>';
+  return '<div class="tl-item"><div class="tl-dot"></div><div class="card"><div class="time">'+(loc.time==='—'?'备选':(loc.time||''))+'</div><div class="name">'+loc.name+'</div><div class="desc">'+loc.desc+'</div>'+(loc.budget?'<div class="budget">预算 '+loc.budget+'</div>':'')+'<div class="links">'+lnk+'</div></div></div>';
 }
 function renderDay(idx){
   const d=DAYS.find(x=>x.id===idx);if(!d)return'';
+  const main=d.locations.filter(l=>l.time!=='—');
+  const alt=d.locations.filter(l=>l.time==='—');
   let h='<div class="day-head"><h2>'+d.title+'</h2><p>'+d.date+'</p></div>';
-  h+='<div class="section-head">行程</div><div class="timeline">';
-  d.locations.forEach(l=>h+=locCard(l,idx));
-  h+='</div>';
+  if(main.length){h+='<div class="section-head">行程</div><div class="timeline">';main.forEach(l=>h+=locCard(l,idx));h+='</div>';}
+  if(alt.length){h+='<div class="section-head">备选（二选一）</div><div class="timeline">';alt.forEach(l=>h+=locCard(l,idx));h+='</div>';}
   return h;
 }
+const tabsEl=document.getElementById('tabs');
+const contentEl=document.getElementById('content');
+DAYS.forEach(d=>{const btn=document.createElement('button');btn.className='tab'+(d.id===0?' active':'');btn.dataset.day=d.id;btn.textContent=d.label;tabsEl.appendChild(btn);});
+function go(idx){contentEl.innerHTML=idx===0?overviewContent():renderDay(idx);showDay(idx);contentEl.scrollTo({top:0});const tab=tabsEl.querySelector('[data-day="'+idx+'"]');if(tab)tab.scrollIntoView({behavior:'smooth',inline:'center'});}
+tabsEl.addEventListener('click',e=>{const t=e.target.closest('.tab');if(t)go(+t.dataset.day);});
 function overviewContent(){
   const dayListHtml=DAYS.slice(1).map(d=>'<div class="card" onclick="go('+d.id+')"><div class="name"><span class="dot" style="background:'+d.color+'"></span>'+d.label+' · '+d.title+'</div><div class="desc">'+d.date+'</div></div>').join('');
   return '<div class="hero"><h1>追 秋 · 大 兴 安 岭</h1><p>9.26 — 10.5 · 台州出发 · 十日自驾</p></div>'+
@@ -161,12 +179,6 @@ function overviewContent(){
   '<div class="section-head">每日行程</div><div>'+dayListHtml+'</div>'+
   '<div class="section-head">实用贴士</div><div class="pay-summary"><div>• 加油：满归加油站加满油</div><div>• 预约：莫尔格勒河、阿尔山需提前预约</div><div>• 导航：高德+百度地图双备</div><div>• 穿衣：昼夜温差10+℃</div></div>';
 }
-const tabsEl=document.getElementById('tabs');
-const contentEl=document.getElementById('content');
-DAYS.forEach(d=>{const btn=document.createElement('button');btn.className='tab'+(d.id===0?' active':'');btn.dataset.day=d.id;btn.textContent=d.label;tabsEl.appendChild(btn);});
-function go(idx){contentEl.innerHTML=idx===0?overviewContent():renderDay(idx);showDay(idx);contentEl.scrollTo({top:0});const tab=tabsEl.querySelector('[data-day="'+idx+'"]');if(tab)tab.scrollIntoView({behavior:'smooth',inline:'center'});}
-function toggle(id){const el=document.getElementById(id);if(el)el.style.display=el.style.display==='none'?'block':'none';}
-tabsEl.addEventListener('click',e=>{const t=e.target.closest('.tab');if(t)go(+t.dataset.day);});
 go(0);
 </script>
 </body>
