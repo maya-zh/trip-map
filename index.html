@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>追秋 · 大兴安岭十日之旅</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+</head>
+<body>
+<div id="map"></div>
+<div id="tabs"></div>
+<div id="content"></div>
+<script>
+const DAYS=[{id:0,label:'总览',color:'#0071e3',locations:[]},{id:1,label:'DAY1',date:'9.26 周六',title:'台州→海拉尔',color:'#ff9500',locations:[{name:'台州',lat:28.656,lng:121.42,type:'transport',time:'全天',desc:'出发城市'},{name:'海拉尔东山机场',lat:49.205,lng:119.825,type:'transport',time:'抵达',desc:'呼伦贝尔首府'}]},{id:2,label:'DAY2',date:'9.27 周日',title:'海拉尔→根河',color:'#34c759',locations:[{name:'海拉尔',lat:49.205,lng:119.825,type:'hotel',time:'出发',desc:'酒店早餐后出发'},{name:'莫尔格勒河',lat:50.0592,lng:121.0075,type:'spot',time:'10:00',desc:'天下第一曲水',budget:'¥80'},{name:'额尔古纳湿地',lat:50.2236,lng:120.1709,type:'spot',time:'14:00',desc:'亚洲第一湿地',budget:'¥160'},{name:'根河',lat:50.7847,lng:121.4771,type:'hotel',time:'20:00',desc:'住宿根河'}]},{id:3,label:'DAY3',date:'9.28 周一',title:'根河→满归',color:'#af52de',locations:[{name:'根河',lat:50.7847,lng:121.4771,type:'hotel',time:'出发',desc:'清晨出发'},{name:'敖鲁古雅驯鹿部落',lat:50.9167,lng:121.4833,type:'spot',time:'09:00',desc:'驯鹿部落',budget:'¥276'},{name:'满归',lat:51.9083,lng:122.0833,type:'hotel',time:'18:00',desc:'住宿满归'}]},{id:4,label:'DAY4',date:'9.29 周二',title:'满归→莫尔道嘎',color:'#ff2d55',locations:[{name:'满归',lat:51.9083,lng:122.0833,type:'hotel',time:'出发',desc:'加满油出发'},{name:'莫尔道嘎国家森林公园',lat:51.2667,lng:120.4167,type:'spot',time:'15:00',desc:'中国最大森林公园',budget:'¥200'},{name:'莫尔道嘎',lat:51.2667,lng:120.4167,type:'hotel',time:'19:00',desc:'住宿莫尔道嘎镇'}]},{id:5,label:'DAY5',date:'9.30 周三',title:'莫尔道嘎→室韦',color:'#5ac8fa',locations:[{name:'莫尔道嘎',lat:51.2667,lng:120.4167,type:'hotel',time:'出发',desc:'清晨出发'},{name:'白桦林景区',lat:51.15,lng:120.05,type:'spot',time:'10:00',desc:'纯白桦林'},{name:'室韦',lat:51.344,lng:119.8998,type:'hotel',time:'17:00',desc:'中国十大最美乡村'}]},{id:6,label:'DAY6',date:'10.1 周四',title:'室韦→黑山头',color:'#ff6b6b',locations:[{name:'室韦',lat:51.344,lng:119.8998,type:'hotel',time:'出发',desc:'清晨出发'},{name:'黑山头日落',lat:50.3625,lng:119.4063,type:'spot',time:'17:00',desc:'中国最美日落之一'},{name:'黑山头',lat:50.3625,lng:119.4063,type:'hotel',time:'19:00',desc:'住宿黑山头'}]},{id:7,label:'DAY7',date:'10.2 周五',title:'黑山头→海拉尔',color:'#4cd964',locations:[{name:'黑山头',lat:50.3625,lng:119.4063,type:'hotel',time:'出发',desc:'清晨出发'},{name:'海拉尔',lat:49.205,lng:119.825,type:'hotel',time:'18:00',desc:'返回海拉尔'}]},{id:8,label:'DAY8',date:'10.3 周六',title:'海拉尔→阿尔山',color:'#5856d6',locations:[{name:'海拉尔',lat:49.205,lng:119.825,type:'hotel',time:'出发',desc:'一早出发'},{name:'阿尔山森林公园',lat:47.1,lng:119.9333,type:'spot',time:'12:00',desc:'亚洲最大火山熔岩地貌',budget:'¥870'},{name:'阿尔山',lat:47.1,lng:119.9333,type:'hotel',time:'17:00',desc:'住宿阿尔山市'}]},{id:9,label:'DAY9',date:'10.4 周日',title:'阿尔山→海拉尔',color:'#ff9500',locations:[{name:'阿尔山',lat:47.1,lng:119.9333,type:'hotel',time:'出发',desc:'一早出发'},{name:'海拉尔',lat:49.205,lng:119.825,type:'hotel',time:'18:00',desc:'住宿海拉尔'}]},{id:10,label:'DAY10',date:'10.5 周一',title:'海拉尔→台州',color:'#8e8e93',locations:[{name:'海拉尔',lat:49.205,lng:119.825,type:'transport',time:'全天',desc:'搭乘航班返回台州'},{name:'台州',lat:28.656,lng:121.42,type:'transport',time:'抵达',desc:'平安到家'}]}];
+const map=L.map('map',{center:[49.5,120.2],zoom:6,zoomControl:false,attributionControl:true});
+L.control.zoom({position:'topright'}).addTo(map);
+L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',{subdomains:'abcd',maxZoom:19}).addTo(map);
+const emojis={food:'🍽️',spot:'📍',hotel:'🏨',transport:'🚗',drink:'🍺'};
+let markers=[],polylines=[];
+function clearMap(){markers.forEach(m=>map.removeLayer(m));polylines.forEach(p=>map.removeLayer(p));markers=[];polylines=[];}
+function showDay(idx){
+  clearMap();
+  if(idx===0){
+    const pts=[];
+    DAYS.forEach(d=>d.locations.forEach(l=>{if(l.lat)pts.push([l.lat,l.lng]);}));
+    if(pts.length)map.fitBounds(pts,{padding:[30,30]});
+    DAYS.slice(1).forEach(d=>{
+      d.locations.forEach(l=>{
+        if(!l.lat)return;
+        const m=L.circleMarker([l.lat,l.lng],{radius:4,fillColor:d.color,color:'#fff',weight:1.5,fillOpacity:.9}).addTo(map);
+        markers.push(m);
+      });
+    });
+    return;
+  }
+  const day=DAYS.find(d=>d.id===idx);if(!day)return;
+  const coords=[];
+  day.locations.forEach(l=>{
+    if(!l.lat)return;
+    const m=L.marker([l.lat,l.lng],{icon:L.divIcon({className:'',html:'<div style="width:28px;height:28px;border-radius:50%;background:'+day.color+';border:2.5px solid #fff;display:flex;align-items:center;justify-content:center;font-size:13px">'+(emojis[l.type]||'📌')+'</div>',iconSize:[28,28],iconAnchor:[14,14]})}).addTo(map);
+    m.bindPopup('<b>'+l.name+'</b>'+(l.time?'<br>'+l.time:'')+'<br>'+l.desc+(l.budget?'<br>'+l.budget:''));
+    markers.push(m);
+    coords.push([l.lat,l.lng]);
+  });
+  if(coords.length>1){L.polyline(coords,{color:day.color,weight:2.5,opacity:.5,dashArray:'6,5'}).addTo(map);}
+  if(coords.length)map.fitBounds(coords,{padding:[40,40],maxZoom:12});
+}
+function renderDay(idx){
+  const d=DAYS.find(x=>x.id===idx);if(!d)return'';
+  let h='<div class="day-head"><h2>'+d.title+'</h2><p>'+d.date+'</p></div>';
+  h+='<div class="timeline">';
+  d.locations.forEach(l=>{h+='<div class="tl-item"><div class="tl-dot"></div><div class="card"><div class="time">'+(l.time||'')+'</div><div class="name">'+l.name+'</div><div class="desc">'+l.desc+'</div>'+(l.budget?'<div class="budget">预算 '+l.budget+'</div>':'')+'</div></div>';});
+  h+='</div>';
+  return h;
+}
+function overviewContent(){
+  const dayListHtml=DAYS.slice(1).map(d=>'<div class="card" onclick="go('+d.id+')"><div class="name">'+d.label+' · '+d.title+'</div><div class="desc">'+d.date+'</div></div>').join('');
+  return '<div class="hero"><h1>追秋·大兴安岭</h1><p>9.26—10.5 台州出发十日自驾</p></div>'+
+  '<div class="section-head">每日行程</div><div class="day-list">'+dayListHtml+'</div>';
+}
+const tabsEl=document.getElementById('tabs');
+const contentEl=document.getElementById('content');
+DAYS.forEach(d=>{const btn=document.createElement('button');btn.className='tab'+(d.id===0?' active':'');btn.dataset.day=d.id;btn.textContent=d.label;tabsEl.appendChild(btn);});
+function go(idx){contentEl.innerHTML=idx===0?overviewContent():renderDay(idx);showDay(idx);}
+tabsEl.addEventListener('click',e=>{const t=e.target.closest('.tab');if(t)go(+t.dataset.day);});
+go(0);
+</script>
+</body>
+</html>
